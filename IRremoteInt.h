@@ -79,6 +79,11 @@
   
   #define IR_USE_SAM // Used to correct code where needed to be compatible with the Due.
   #define IR_USE_DUE // Used to correctly map pins. (The idea being there might be more 
+  
+  //ATtiny85
+#elif defined(__AVR_ATtiny85__)
+  #define IR_USE_TIMER_TINY0   // tx = pin 1
+  
 // Arduino Duemilanove, Diecimila, LilyPad, Mini, Fio, etc
 #else
   //#define IR_USE_TIMER1   // tx = pin 9
@@ -292,6 +297,39 @@ extern volatile irparams_t irparams;
 #define TIMER_PWM_PIN        3  /* Arduino Duemilanove, Diecimila, LilyPad, etc */
 #endif
 
+// defines for timer_tiny0 (8 bits)
+#elif defined(IR_USE_TIMER_TINY0)
+#define TIMER_RESET
+#define TIMER_ENABLE_PWM     (TCCR0A |= _BV(COM0B1))
+#define TIMER_DISABLE_PWM    (TCCR0A &= ~(_BV(COM0B1)))
+#define TIMER_ENABLE_INTR    (TIMSK |= _BV(OCIE0A))
+#define TIMER_DISABLE_INTR   (TIMSK &= ~(_BV(OCIE0A)))
+#define TIMER_INTR_NAME      TIMER0_COMPA_vect
+#define TIMER_CONFIG_KHZ(val) ({ \
+  const uint8_t pwmval = SYSCLOCK / 2000 / (val); \
+  TCCR0A = _BV(WGM00); \
+  TCCR0B = _BV(WGM02) | _BV(CS00); \
+  OCR0A = pwmval; \
+  OCR0B = pwmval / 3; \
+})
+#define TIMER_COUNT_TOP      (SYSCLOCK * USECPERTICK / 1000000)
+#if (TIMER_COUNT_TOP < 256)
+#define TIMER_CONFIG_NORMAL() ({ \
+  TCCR0A = _BV(WGM01); \
+  TCCR0B = _BV(CS00); \
+  OCR0A = TIMER_COUNT_TOP; \
+  TCNT0 = 0; \
+})
+#else
+#define TIMER_CONFIG_NORMAL() ({ \
+  TCCR0A = _BV(WGM01); \
+  TCCR0B = _BV(CS01); \
+  OCR0A = TIMER_COUNT_TOP / 8; \
+  TCNT0 = 0; \
+})
+#endif
+
+#define TIMER_PWM_PIN        1  /* ATtiny85 */
 
 // defines for timer1 (16 bits)
 #elif defined(IR_USE_TIMER1)
