@@ -20,7 +20,11 @@
 #include "IRremoteInt.h"
 
 // Provides ISR
-#include <avr/interrupt.h>
+#if defined(IR_USE_SAM)
+	//Add any needed SAM specific libraries here.
+#else
+	#include <avr/interrupt.h>
+#endif
 
 volatile irparams_t irparams;
 
@@ -119,6 +123,26 @@ void IRsend::sendRaw(unsigned int buf[], int len, int hz)
   space(0); // Just to be sure
 }
 
+//Used to reduce read time by using 50us ticks so we can use bytes instead of int.
+//The calculations are done as we read the ticks array.
+void IRsend::sendRawCompact(uint8_t *buf, int len, int hz)
+{
+  unsigned int compCalc;
+  enableIROut(hz);
+  for (int i = 0; i < len; i++) {
+	compCalc = (unsigned int)buf[i] * USECPERTICK;
+    if (i & 1) {
+      space(compCalc); 
+	  //space(buf[i]);
+    } 
+    else {
+      mark(compCalc);
+	  //mark(buf[i]);
+    }
+  }
+  space(0); // Just to be sure
+}
+
 // Note: first bit must be a one (start bit)
 void IRsend::sendRC5(unsigned long data, int nbits)
 {
@@ -172,6 +196,38 @@ void IRsend::sendRC6(unsigned long data, int nbits)
   }
   space(0); // Turn off at end
 }
+
+void IRsend::sendRC6(unsigned long long data, int nbits)
+{
+  enableIROut(36);
+  data = data << (64 - nbits);
+  mark(RC6_HDR_MARK);
+  space(RC6_HDR_SPACE);
+  mark(RC6_T1); // start bit
+  space(RC6_T1);
+  int t;
+  for (int i = 0; i < nbits; i++) {
+    if (i == 3) {
+      // double-wide trailer bit
+      t = 2 * RC6_T1;
+    } 
+    else {
+      t = RC6_T1;
+    }
+    if (data & 0x8000000000000000LL) {
+      mark(t);
+      space(t);
+    } 
+    else {
+      space(t);
+      mark(t);
+    }
+
+    data <<= 1;
+  }
+  space(0); // Turn off at end
+}
+
 void IRsend::sendPanasonic(unsigned int address, unsigned long data) {
     enableIROut(35);
     mark(PANASONIC_HDR_MARK);
@@ -247,13 +303,18 @@ void IRsend::enableIROut(int khz) {
   // To turn the output on and off, we leave the PWM running, but connect and disconnect the output pin.
   // A few hours staring at the ATmega documentation and this will all make sense.
   // See my Secrets of Arduino PWM at http://arcfn.com/2009/07/secrets-of-arduino-pwm.html for details.
-
+  #if defined IR_USE_SAM
+	//Disable write protection on the power management controller so we can enable timers and pwm later.
+	pmc_set_writeprotect(false); 
+  #endif
   
   // Disable the Timer2 Interrupt (which is used for receiving IR)
   TIMER_DISABLE_INTR; //Timer2 Overflow Interrupt
   
+  #ifndef IR_USE_SAM
   pinMode(TIMER_PWM_PIN, OUTPUT);
   digitalWrite(TIMER_PWM_PIN, LOW); // When not sending PWM, we want it low
+  #endif
   
   // COM2A = 00: disconnect OC2A
   // COM2B = 00: disconnect OC2B; to send signal set to 10: OC2B non-inverted
@@ -271,7 +332,14 @@ IRrecv::IRrecv(int recvpin)
 
 // initialization
 void IRrecv::enableIRIn() {
-  cli();
+  #if defined IR_USE_SAM
+	//Disable write protection on the power management controller so we can enable timers and pwm later.
+	pmc_set_writeprotect(false); 
+  #endif
+  
+  #ifndef IR_USE_SAM
+    cli();
+  #endif
   // setup pulse clock timer interrupt
   //Prescale /8 (16M/8 = 0.5 microseconds per tick)
   // Therefore, the timer interval can range from 0.5 to 128 microseconds
@@ -283,7 +351,9 @@ void IRrecv::enableIRIn() {
 
   TIMER_RESET;
 
+  #ifndef IR_USE_SAM
   sei();  // enable interrupts
+  #endif
 
   // initialize state machine variables
   irparams.rcvstate = STATE_IDLE;
@@ -308,12 +378,16 @@ void IRrecv::blink13(int blinkflag)
 // First entry is the SPACE between transmissions.
 // As soon as a SPACE gets long, ready is set, state switches to IDLE, timing of SPACE continues.
 // As soon as first MARK arrives, gap width is recorded, ready is cleared, and new logging starts
+#if defined(IR_USE_SAM)
+void TIMER_INTR_NAME()
+#else
 ISR(TIMER_INTR_NAME)
+#endif
 {
   TIMER_RESET;
 
   uint8_t irdata = (uint8_t)digitalRead(irparams.recvpin);
-
+  
   irparams.timer++; // One more 50us tick
   if (irparams.rawlen >= RAWBUF) {
     // Buffer overflow
@@ -321,7 +395,7 @@ ISR(TIMER_INTR_NAME)
   }
   switch(irparams.rcvstate) {
   case STATE_IDLE: // In the middle of a gap
-    if (irdata == MARK) {
+    if (irdata == MARK) {		
       if (irparams.timer < GAP_TICKS) {
         // Not big enough to be a gap.
         irparams.timer = 0;
@@ -380,8 +454,6 @@ void IRrecv::resume() {
   irparams.rawlen = 0;
 }
 
-
-
 // Decodes the received IR message
 // Returns 0 if no data ready, 1 if data ready.
 // Results of decoding are stored in results
@@ -434,11 +506,24 @@ int IRrecv::decode(decode_results *results) {
         return DECODED;
     }
 #ifdef DEBUG
+    Serial.println("Attempting Samsung2 decode");
+#endif 
+    if (decodeSamsung2(results)) {
+        return DECODED;
+    }
+#ifdef DEBUG
     Serial.println("Attempting JVC decode");
 #endif 
     if (decodeJVC(results)) {
         return DECODED;
     }
+#ifdef DEBUG
+    Serial.println("Attempting Samsung decode");
+#endif 
+    if (decodeSamsung(results)) {
+        return DECODED;
+    }
+
   // decodeHash returns a hash on any input.
   // Thus, it needs to be last in the list.
   // If you add any decodes, add them before this.
@@ -896,6 +981,73 @@ long IRrecv::decodeJVC(decode_results *results) {
     return DECODED;
 }
 
+//Samsung TV codes imported from http://www.maartendamen.com/2010/05/jeenode-infrared-project-part-1-getting-started/
+long IRrecv::decodeSamsung(decode_results *results) {
+ long data = 0;
+ int offset = 1; // Skip first space
+ // Initial mark
+ if (!MATCH_MARK(results->rawbuf[offset], SAMSUNG_HDR_MARK)) {
+ return ERR;
+ }
+ offset++;
+ 
+ // Check bits
+ if (irparams.rawlen < 2 * SAMSUNG_BITS + 4) {
+ return ERR;
+ }
+ 
+ // Initial space
+ if (!MATCH_SPACE(results->rawbuf[offset], SAMSUNG_HDR_SPACE)) {
+ return ERR;
+ }
+ offset++;
+ //Serial.println("OFFSET");
+ //Serial.println(offset);
+ 
+ for (int i = 0; i < SAMSUNG_BITS; i++) {
+ if (!MATCH_MARK(results->rawbuf[offset], SAMSUNG_BIT_MARK)) {
+ return ERR;
+ }
+ offset++;
+ if (MATCH_SPACE(results->rawbuf[offset], SAMSUNG_ONE_SPACE)) {
+ data = (data << 1) | 1;
+ }
+ else if (MATCH_SPACE(results->rawbuf[offset], SAMSUNG_ZERO_SPACE)) {
+ data <<= 1;
+ }
+ else {
+ return ERR;
+ }
+ offset++;
+ }
+ // Success
+ results->bits = SAMSUNG_BITS;
+ results->value = data;
+ results->decode_type = SAMSUNG;
+ return DECODED;
+}
+
+//Samsung TV send code found in comments on http://www.arcfn.com/2009/08/multi-protocol-infrared-remote-library.html
+void IRsend::sendSamsung(unsigned long data, int nbits)
+{
+enableIROut(38);
+mark(SAMSUNG_HDR_MARK);
+space(SAMSUNG_HDR_SPACE);
+for (int i = 0; i < nbits; i++) {
+if (data & TOPBIT) {
+mark(SAMSUNG_BIT_MARK);
+space(SAMSUNG_ONE_SPACE);
+} 
+else {
+mark(SAMSUNG_BIT_MARK);
+space(SAMSUNG_ZERO_SPACE);
+}
+data <<= 1;
+}
+mark(SAMSUNG_BIT_MARK);
+space(0);
+}
+
 /* -----------------------------------------------------------------------
  * hashdecode - decode an arbitrary IR code.
  * Instead of decoding using a standard encoding scheme
@@ -1022,4 +1174,72 @@ void IRsend::sendDISH(unsigned long data, int nbits)
     }
     data <<= 1;
   }
+}
+
+long IRrecv::decodeSamsung2(decode_results *results) {
+    unsigned long long data = 0;
+    int offset = 1;
+    
+    if (!MATCH_MARK(results->rawbuf[offset], SAMSUNG2_HDR_MARK)) {
+        return ERR;
+    }
+    offset++;
+    if (!MATCH_MARK(results->rawbuf[offset], SAMSUNG2_HDR_SPACE)) {
+        return ERR;
+    }
+    offset++;
+    
+    // decode address
+    for (int i = 0; i < SAMSUNG2_BITS; i++) {
+        if (!MATCH_MARK(results->rawbuf[offset++], SAMSUNG2_BIT_MARK)) {
+            return ERR;
+        }
+        if (MATCH_SPACE(results->rawbuf[offset],SAMSUNG2_ONE_SPACE)) {
+            data = (data << 1) | 1;
+        } else if (MATCH_SPACE(results->rawbuf[offset],SAMSUNG2_ZERO_SPACE)) {
+            data <<= 1;
+		} else if (MATCH_SPACE(results->rawbuf[offset],SAMSUNG2_HDR_SPACE)) {
+			//Skip this space after the address.
+        } else {
+            return ERR;
+        }
+        offset++;
+    }
+    results->value = (unsigned long)data << 12 ;
+    results->panasonicAddress = (unsigned int)(data >> 20);
+    results->decode_type = SAMSUNG2;
+    results->bits = SAMSUNG2_BITS;
+    return DECODED;
+}
+
+void IRsend::sendSamsung2(unsigned int address, unsigned long data) {
+	enableIROut(38);    
+	mark(SAMSUNG2_HDR_MARK);
+    space(SAMSUNG2_HDR_SPACE);
+    
+    for(int i=0;i<16;i++)
+    {
+        mark(SAMSUNG2_BIT_MARK);		
+        if (address & 0x8000) {
+            space(SAMSUNG2_ONE_SPACE);
+        } else {
+            space(SAMSUNG2_ZERO_SPACE);
+        }
+        address <<= 1;        
+    }    
+	mark(SAMSUNG2_BIT_MARK);
+	space(SAMSUNG2_HDR_SPACE);
+
+    for (int i=0; i < (20); i++) {
+        mark(SAMSUNG2_BIT_MARK);
+        if (data & TOPBIT) {
+            space(SAMSUNG2_ONE_SPACE);
+        } else {
+            space(SAMSUNG2_ZERO_SPACE);
+        }
+        data <<= 1;
+    }
+
+    mark(SAMSUNG2_BIT_MARK);
+    space(0);
 }

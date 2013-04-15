@@ -1,9 +1,13 @@
 This is a copy of the excellent IRremote library for the Arduino modified to work on the Arduino Due while retaining backwards compatibility.
 
 I added send and receive support for a SAMSUNG protocol that someone provided in the comments on Ken’s website since it works for one of my remotes.
+
 I added send and receive support for a protocol I’m calling SAMSUNG2 since I learned it from a Samsung remote.
+
 I added a code size and performance optimization that removes the need to calculate a floating point number for TICKS_LOW and TICKS_HIGH.
+
 I added support for the ATTiny85 and Arduino Due.
+
 To download from github (https://github.com/enternoescape/Arduino-IRremote-Due), click on the "Downloads" link in the upper right, click "Download as zip", and get a zip file.  Unzip it and rename the directory enternoescape-Arduino-IRremote-Due-nnn to IRremote
 
 To install, move the downloaded IRremote directory to:

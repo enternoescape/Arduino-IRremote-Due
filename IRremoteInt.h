@@ -61,6 +61,24 @@
 #elif defined(__AVR_ATmega8P__) || defined(__AVR_ATmega8__)
   #define IR_USE_TIMER1   // tx = pin 9
 
+// Arduino Due
+#elif defined(__SAM3X8E__) || defined(__SAM3X8H__)
+  //#define IR_USE_PWM0   // tx = pin 34
+  //#define IR_USE_PWM1   // tx = pin 36
+  //#define IR_USE_PWM2   // tx = pin 38
+  //#define IR_USE_PWM3   // tx = pin 40
+  //#define IR_USE_PWM4   // tx = pin 9
+  //#define IR_USE_PWM5   // tx = pin 8
+  #define IR_USE_PWM6   // tx = pin 7
+  //#define IR_USE_PWM7   // tx = pin 6
+  //#define TIMER_PWM_PIN 7 //Change this value to correspond with the pin number above.
+  
+  #define IR_USE_TC3    // Use timer clock 3.
+  //#define IR_USE_TC4    // Use timer clock 4.
+  //#define IR_USE_TC5    // Use timer clock 5.
+  
+  #define IR_USE_SAM // Used to correct code where needed to be compatible with the Due.
+  #define IR_USE_DUE // Used to correctly map pins. (The idea being there might be more 
 // Arduino Duemilanove, Diecimila, LilyPad, Mini, Fio, etc
 #else
   //#define IR_USE_TIMER1   // tx = pin 9
@@ -69,8 +87,10 @@
 
 
 
-#ifdef F_CPU
+#if defined(F_CPU)
 #define SYSCLOCK F_CPU     // main Arduino clock
+#elif defined(VARIANT_MCK)
+#define SYSCLOCK VARIANT_MCK
 #else
 #define SYSCLOCK 16000000  // main Arduino clock
 #endif
@@ -159,18 +179,30 @@
 #define JVC_ZERO_SPACE 550
 #define JVC_RPT_LENGTH 60000
 
+#define SAMSUNG_HDR_MARK 4500
+#define SAMSUNG_HDR_SPACE 4500
+#define SAMSUNG_BIT_MARK 560
+#define SAMSUNG_ONE_SPACE 1600
+#define SAMSUNG_ZERO_SPACE 600
+
+#define SAMSUNG2_HDR_MARK 4500
+#define SAMSUNG2_HDR_SPACE 4400
+#define SAMSUNG2_BIT_MARK 550
+#define SAMSUNG2_ONE_SPACE 1400
+#define SAMSUNG2_ZERO_SPACE 500
+
 #define SHARP_BITS 15
 #define DISH_BITS 16
 
 #define TOLERANCE 25  // percent tolerance in measurements
-#define LTOL (1.0 - TOLERANCE/100.) 
-#define UTOL (1.0 + TOLERANCE/100.) 
+#define LTOL (100 - TOLERANCE)
+#define UTOL (100 + TOLERANCE)
 
 #define _GAP 5000 // Minimum map between transmissions
 #define GAP_TICKS (_GAP/USECPERTICK)
 
-#define TICKS_LOW(us) (int) (((us)*LTOL/USECPERTICK))
-#define TICKS_HIGH(us) (int) (((us)*UTOL/USECPERTICK + 1))
+#define TICKS_LOW(us) (int) (( (long) (us) * LTOL / (USECPERTICK * 100) ))
+#define TICKS_HIGH(us) (int) (( (long) (us) * UTOL / (USECPERTICK * 100) + 1))
 
 #ifndef DEBUG
 int MATCH(int measured, int desired) {return measured >= TICKS_LOW(desired) && measured <= TICKS_HIGH(desired);}
@@ -213,6 +245,8 @@ extern volatile irparams_t irparams;
 #define MIN_RC6_SAMPLES 1
 #define PANASONIC_BITS 48
 #define JVC_BITS 16
+#define SAMSUNG_BITS 32
+#define SAMSUNG2_BITS 37
 
 
 
@@ -425,6 +459,101 @@ extern volatile irparams_t irparams;
 #error "Please add OC5A pin number here\n"
 #endif
 
+// Arduino Due Timer
+#elif defined(IR_USE_DUE)
+#if defined(IR_USE_PWM0) // pin 34
+	#define TIMER_PWM_PIN 34
+	#define IR_USE_PWM_PORT PIOC
+	#define IR_USE_PWM_PERIPH PIO_PERIPH_B
+	#define IR_USE_PWM_PINMASK PIO_PC2
+	#define IR_USE_PWM_CH 0
+#elif defined(IR_USE_PWM1) //pin 36
+	#define TIMER_PWM_PIN 36
+	#define IR_USE_PWM_PORT PIOC
+	#define IR_USE_PWM_PERIPH PIO_PERIPH_B
+	#define IR_USE_PWM_PINMASK PIO_PC4
+	#define IR_USE_PWM_CH 1
+#elif defined(IR_USE_PWM2) //pin 38
+	#define TIMER_PWM_PIN 38
+	#define IR_USE_PWM_PORT PIOC
+	#define IR_USE_PWM_PERIPH PIO_PERIPH_B
+	#define IR_USE_PWM_PINMASK PIO_PC6
+	#define IR_USE_PWM_CH 2
+#elif defined(IR_USE_PWM3) //pin 40
+	#define TIMER_PWM_PIN 40
+	#define IR_USE_PWM_PORT PIOC
+	#define IR_USE_PWM_PERIPH PIO_PERIPH_B
+	#define IR_USE_PWM_PINMASK PIO_PC8
+	#define IR_USE_PWM_CH 3
+#elif defined(IR_USE_PWM4) //pin 9
+	#define TIMER_PWM_PIN 9
+	#define IR_USE_PWM_PORT PIOC
+	#define IR_USE_PWM_PERIPH PIO_PERIPH_B
+	#define IR_USE_PWM_PINMASK PIO_PC21
+	#define IR_USE_PWM_CH 4
+#elif defined(IR_USE_PWM5) //pin 8
+	#define TIMER_PWM_PIN 8
+	#define IR_USE_PWM_PORT PIOC
+	#define IR_USE_PWM_PERIPH PIO_PERIPH_B
+	#define IR_USE_PWM_PINMASK PIO_PC22
+	#define IR_USE_PWM_CH 5
+#elif defined(IR_USE_PWM6) //pin 7
+	#define TIMER_PWM_PIN 7
+	#define IR_USE_PWM_PORT PIOC
+	#define IR_USE_PWM_PERIPH PIO_PERIPH_B
+	#define IR_USE_PWM_PINMASK PIO_PC23
+	#define IR_USE_PWM_CH 6
+#elif defined(IR_USE_PWM7) //pin 6
+	#define TIMER_PWM_PIN 6
+	#define IR_USE_PWM_PORT PIOC
+	#define IR_USE_PWM_PERIPH PIO_PERIPH_B
+	#define IR_USE_PWM_PINMASK PIO_PC24
+	#define IR_USE_PWM_CH 7
+#endif
+
+#if defined(IR_USE_TC3) //Timer clock 3
+	#define IR_USE_TC_IRQ 	TC3_IRQn
+	#define IR_USE_TC 		TC1
+	#define IR_USE_CH 		0
+	#define TIMER_INTR_NAME	TC3_Handler
+#elif defined(IR_USE_TC4) //Timer clock 4
+	#define IR_USE_TC_IRQ 	TC4_IRQn
+	#define IR_USE_TC 		TC1
+	#define IR_USE_CH 		1
+	#define TIMER_INTR_NAME	TC4_Handler
+#elif defined(IR_USE_TC5) //Timer clock 5
+	#define IR_USE_TC_IRQ 	TC5_IRQn
+	#define IR_USE_TC 		TC1
+	#define IR_USE_CH 		2
+	#define TIMER_INTR_NAME	TC5_Handler
+#endif
+
+#define TIMER_RESET          (TC1->TC_CHANNEL[0].TC_SR) //Clears the interupt.
+#define TIMER_ENABLE_PWM     (PWMC_EnableChannel(PWM_INTERFACE, IR_USE_PWM_CH))
+#define TIMER_DISABLE_PWM    (PWMC_DisableChannel(PWM_INTERFACE, IR_USE_PWM_CH))
+#define TIMER_ENABLE_INTR    (NVIC_EnableIRQ(IR_USE_TC_IRQ))
+#define TIMER_DISABLE_INTR   (NVIC_DisableIRQ(IR_USE_TC_IRQ))
+//#define TIMER_INTR_NAME      TC3_Handler
+#define TIMER_CONFIG_KHZ(val) ({ \
+  pmc_enable_periph_clk(PWM_INTERFACE_ID); \
+  const uint32_t pwmval = (val) * 2000; \
+  PWMC_ConfigureClocks(pwmval, 0, SYSCLOCK); \
+  PIO_Configure(IR_USE_PWM_PORT, IR_USE_PWM_PERIPH, IR_USE_PWM_PINMASK, PIO_DEFAULT); \
+  PWMC_ConfigureChannel(PWM_INTERFACE, IR_USE_PWM_CH, PWM_CMR_CPRE_CLKA, 0, 0); \
+  PWMC_SetPeriod(PWM_INTERFACE, IR_USE_PWM_CH, 2); \
+  PWMC_SetDutyCycle(PWM_INTERFACE, IR_USE_PWM_CH, 1); \
+})
+#define TIMER_CONFIG_NORMAL() ({ \
+  pmc_enable_periph_clk((uint32_t)IR_USE_TC_IRQ); \
+  TC_Configure(IR_USE_TC, IR_USE_CH, TC_CMR_WAVE | TC_CMR_WAVSEL_UP_RC | TC_CMR_TCCLKS_TIMER_CLOCK1); \
+  const uint32_t rc = (SYSCLOCK / 2) * USECPERTICK / 1000000; \
+  TC_SetRA(IR_USE_TC, IR_USE_CH, rc/2); \
+  TC_SetRC(IR_USE_TC, IR_USE_CH, rc); \
+  TC_Start(IR_USE_TC, IR_USE_CH); \
+  IR_USE_TC->TC_CHANNEL[IR_USE_CH].TC_IER=TC_IER_CPCS; \
+  IR_USE_TC->TC_CHANNEL[IR_USE_CH].TC_IDR=~TC_IER_CPCS; \
+})
+
 
 #else // unknown timer
 #error "Internal code configuration error, no known IR_USE_TIMER# defined\n"
@@ -444,6 +573,10 @@ extern volatile irparams_t irparams;
 #define BLINKLED       0
 #define BLINKLED_ON()  (PORTD |= B00000001)
 #define BLINKLED_OFF() (PORTD &= B11111110)
+#elif defined(__SAM3X8E__) || defined(__SAM3X8H__)
+#define BLINKLED       13
+#define BLINKLED_ON()  (PIOB->PIO_SODR = (1 << 27))
+#define BLINKLED_OFF() (PIOB->PIO_CODR = (1 << 27))
 #else
 #define BLINKLED       13
 #define BLINKLED_ON()  (PORTB |= B00100000)
