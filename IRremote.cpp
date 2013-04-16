@@ -1194,15 +1194,22 @@ long IRrecv::decodeSamsung2(decode_results *results) {
         if (!MATCH_MARK(results->rawbuf[offset++], SAMSUNG2_BIT_MARK)) {
             return ERR;
         }
-        if (MATCH_SPACE(results->rawbuf[offset],SAMSUNG2_ONE_SPACE)) {
-            data = (data << 1) | 1;
-        } else if (MATCH_SPACE(results->rawbuf[offset],SAMSUNG2_ZERO_SPACE)) {
-            data <<= 1;
-		} else if (MATCH_SPACE(results->rawbuf[offset],SAMSUNG2_HDR_SPACE)) {
-			//Skip this space after the address.
-        } else {
-            return ERR;
-        }
+		if (offset == 36)
+		{
+			if (!MATCH_SPACE(results->rawbuf[offset],SAMSUNG2_HDR_SPACE)) {
+				return ERR;
+			}
+		}
+		else
+		{
+			if (MATCH_SPACE(results->rawbuf[offset],SAMSUNG2_ONE_SPACE)) {
+				data = (data << 1) | 1;
+			} else if (MATCH_SPACE(results->rawbuf[offset],SAMSUNG2_ZERO_SPACE)) {
+				data <<= 1;
+			} else {
+				return ERR;
+			}
+		}
         offset++;
     }
     results->value = (unsigned long)data << 12 ;
