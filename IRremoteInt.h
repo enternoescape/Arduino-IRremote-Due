@@ -71,7 +71,6 @@
   //#define IR_USE_PWM5   // tx = pin 8
   #define IR_USE_PWM6   // tx = pin 7
   //#define IR_USE_PWM7   // tx = pin 6
-  //#define TIMER_PWM_PIN 7 //Change this value to correspond with the pin number above.
   
   #define IR_USE_TC3    // Use timer clock 3.
   //#define IR_USE_TC4    // Use timer clock 4.
