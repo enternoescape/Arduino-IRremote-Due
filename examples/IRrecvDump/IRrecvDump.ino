@@ -51,6 +51,14 @@ void dump(decode_results *results) {
   else if (results->decode_type == JVC) {
      Serial.print("Decoded JVC: ");
   }
+  else if (results->decode_type == SAMSUNG) {
+     Serial.print("Decoded SAMSUNG: ");
+  }
+  else if (results->decode_type == SAMSUNG2) {	
+    Serial.print("Decoded SAMSUNG2 - Address: ");
+    Serial.print(results->panasonicAddress,HEX);
+    Serial.print(" Value: ");
+  }
   Serial.print(results->value, HEX);
   Serial.print(" (");
   Serial.print(results->bits, DEC);

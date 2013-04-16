@@ -250,7 +250,7 @@ extern volatile irparams_t irparams;
 #define PANASONIC_BITS 48
 #define JVC_BITS 16
 #define SAMSUNG_BITS 32
-#define SAMSUNG2_BITS 37
+#define SAMSUNG2_BITS 36
 
 
 
