@@ -574,9 +574,9 @@ extern volatile irparams_t irparams;
 #define TIMER_CONFIG_KHZ(val) ({ \
   pmc_enable_periph_clk(PWM_INTERFACE_ID); \
   const uint32_t pwmval = (val) * 2000; \
-  PWMC_ConfigureClocks(pwmval, 0, SYSCLOCK); \
+  PWMC_ConfigureClocks(PWM_FREQUENCY * PWM_MAX_DUTY_CYCLE, pwmval, SYSCLOCK); \
   PIO_Configure(IR_USE_PWM_PORT, IR_USE_PWM_PERIPH, IR_USE_PWM_PINMASK, PIO_DEFAULT); \
-  PWMC_ConfigureChannel(PWM_INTERFACE, IR_USE_PWM_CH, PWM_CMR_CPRE_CLKA, 0, 0); \
+  PWMC_ConfigureChannel(PWM_INTERFACE, IR_USE_PWM_CH, PWM_CMR_CPRE_CLKB, 0, 0); \
   PWMC_SetPeriod(PWM_INTERFACE, IR_USE_PWM_CH, 2); \
   PWMC_SetDutyCycle(PWM_INTERFACE, IR_USE_PWM_CH, 1); \
 })
