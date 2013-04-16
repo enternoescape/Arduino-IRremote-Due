@@ -4,7 +4,8 @@
  * Version 0.1 July, 2009
  * Copyright 2009 Ken Shirriff
  * http://arcfn.com
- * Samsung and Samsung2 protocol added by Joseph Shuttlesworth (Thanks to the people at the original blog post)
+ * Samsung and Samsung2 protocol added by Joseph Shuttlesworth
+ * (Thanks to Ribeiro Santos from the original blog post and http://www.maartendamen.com/2010/05/jeenode-infrared-project-part-1-getting-started/)
  */
 #include <IRremote.h>
  
