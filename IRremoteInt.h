@@ -77,7 +77,7 @@
   //#define IR_USE_TC5    // Use timer clock 5.
   
   #define IR_USE_SAM // Used to correct code where needed to be compatible with the Due.
-  #define IR_USE_DUE // Used to correctly map pins. (The idea being there might be more 
+  #define IR_USE_DUE // Used to correctly map pins. (The idea being there might be more than one Arduino model based on SAM cores.)
   
   //ATtiny85
 #elif defined(__AVR_ATtiny85__)
