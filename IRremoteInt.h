@@ -566,7 +566,7 @@ extern volatile irparams_t irparams;
 	#define TIMER_INTR_NAME	TC5_Handler
 #endif
 
-#define TIMER_RESET          (TC1->TC_CHANNEL[0].TC_SR) //Clears the interupt.
+#define TIMER_RESET          (IR_USE_TC->TC_CHANNEL[IR_USE_CH].TC_SR) //Clears the interrupt.
 #define TIMER_ENABLE_PWM     (PWMC_EnableChannel(PWM_INTERFACE, IR_USE_PWM_CH))
 #define TIMER_DISABLE_PWM    (PWMC_DisableChannel(PWM_INTERFACE, IR_USE_PWM_CH))
 #define TIMER_ENABLE_INTR    (NVIC_EnableIRQ(IR_USE_TC_IRQ))
