@@ -985,40 +985,48 @@ long IRrecv::decodeJVC(decode_results *results) {
 long IRrecv::decodeSamsung(decode_results *results) {
  long data = 0;
  int offset = 1; // Skip first space
+
+ // Check bits
+if (irparams.rawlen < 2 * SAMSUNG_BITS + 4 && irparams.rawlen != 6) {
+	return ERR;
+ }
+ 
  // Initial mark
  if (!MATCH_MARK(results->rawbuf[offset], SAMSUNG_HDR_MARK)) {
- return ERR;
+	return ERR;
  }
  offset++;
- 
- // Check bits
- if (irparams.rawlen < 2 * SAMSUNG_BITS + 4) {
- return ERR;
- }
- 
+  
  // Initial space
  if (!MATCH_SPACE(results->rawbuf[offset], SAMSUNG_HDR_SPACE)) {
- return ERR;
+	return ERR;
  }
  offset++;
  //Serial.println("OFFSET");
  //Serial.println(offset);
  
  for (int i = 0; i < SAMSUNG_BITS; i++) {
- if (!MATCH_MARK(results->rawbuf[offset], SAMSUNG_BIT_MARK)) {
- return ERR;
- }
- offset++;
- if (MATCH_SPACE(results->rawbuf[offset], SAMSUNG_ONE_SPACE)) {
- data = (data << 1) | 1;
- }
- else if (MATCH_SPACE(results->rawbuf[offset], SAMSUNG_ZERO_SPACE)) {
- data <<= 1;
- }
- else {
- return ERR;
- }
- offset++;
+	 if (!MATCH_MARK(results->rawbuf[offset], SAMSUNG_BIT_MARK)) {
+		return ERR;
+	 }
+	 offset++;	 
+	 if (offset == irparams.rawlen)
+	 {
+		results->bits = SAMSUNG_BITS;
+		results->value = REPEAT;
+		results->decode_type = SAMSUNG;
+		return DECODED;
+	 }
+	 if (MATCH_SPACE(results->rawbuf[offset], SAMSUNG_ONE_SPACE)) {
+		data = (data << 1) | 1;
+	 }
+	 else if (MATCH_SPACE(results->rawbuf[offset], SAMSUNG_ZERO_SPACE)) {
+		data <<= 1;		
+	 }
+	 else {
+		return ERR;
+	 }
+	 offset++;
  }
  // Success
  results->bits = SAMSUNG_BITS;
@@ -1027,27 +1035,35 @@ long IRrecv::decodeSamsung(decode_results *results) {
  return DECODED;
 }
 
-//Samsung TV send code found in comments on http://www.arcfn.com/2009/08/multi-protocol-infrared-remote-library.html
+//Modified Samsung TV send code found in comments on http://www.arcfn.com/2009/08/multi-protocol-infrared-remote-library.html
 void IRsend::sendSamsung(unsigned long data, int nbits)
 {
-enableIROut(38);
-mark(SAMSUNG_HDR_MARK);
-space(SAMSUNG_HDR_SPACE);
-for (int i = 0; i < nbits; i++) {
-if (data & TOPBIT) {
-mark(SAMSUNG_BIT_MARK);
-space(SAMSUNG_ONE_SPACE);
-} 
-else {
-mark(SAMSUNG_BIT_MARK);
-space(SAMSUNG_ZERO_SPACE);
+	enableIROut(38);
+	mark(SAMSUNG_HDR_MARK);
+	space(SAMSUNG_HDR_SPACE);
+	if (data == REPEAT)
+	{
+		mark(SAMSUNG_BIT_MARK);
+		space(SAMSUNG_ZERO_SPACE);
+	}
+	else
+	{
+		for (int i = 0; i < nbits; i++)
+		{
+			if (data & TOPBIT) {
+				mark(SAMSUNG_BIT_MARK);
+				space(SAMSUNG_ONE_SPACE);
+			} 
+			else {
+				mark(SAMSUNG_BIT_MARK);
+				space(SAMSUNG_ZERO_SPACE);
+			}
+				data <<= 1;
+		}		
+	}
+	mark(SAMSUNG_BIT_MARK);
+	space(0);
 }
-data <<= 1;
-}
-mark(SAMSUNG_BIT_MARK);
-space(0);
-}
-
 /* -----------------------------------------------------------------------
  * hashdecode - decode an arbitrary IR code.
  * Instead of decoding using a standard encoding scheme
@@ -1180,6 +1196,11 @@ long IRrecv::decodeSamsung2(decode_results *results) {
     unsigned long long data = 0;
     int offset = 1;
     
+	if (irparams.rawlen < 78)
+	{
+		return ERR;
+	}
+	
     if (!MATCH_MARK(results->rawbuf[offset], SAMSUNG2_HDR_MARK)) {
         return ERR;
     }
