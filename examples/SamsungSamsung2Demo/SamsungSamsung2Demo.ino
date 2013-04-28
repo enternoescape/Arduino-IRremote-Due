@@ -24,6 +24,7 @@ void loop() {
   irsend.sendSamsung2(Samsung2Address,Samsung2Power); // This should turn your TV on and off
   
   irsend.sendSamsung(REPEAT, 32); // Some receivers seem to respond a lot faster when a repeat is sent before the actual command.
+  delay(35); //This delay is needed for optimal response.
   irsend.sendSamsung(Samsung, 32); // hex value, 32 bits
   delayMicroseconds(50);
 }
