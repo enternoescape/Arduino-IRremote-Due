@@ -15,7 +15,7 @@ arduino-1.x/libraries/IRremote
 where arduino-1.x is your Arduino installation directory
 
 After installation you should have files such as:
-arduino-1.x/libraries/IRremote/IRremote.cpp
+arduino-1.x/libraries/IRremote/IRremote2.cpp
 
 For details on the library see the Wiki on github or the blog post http://arcfn.com/2009/08/multi-protocol-infrared-remote-library.html
 
