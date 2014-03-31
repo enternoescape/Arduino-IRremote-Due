@@ -7,7 +7,7 @@
  * Samsung and Samsung2 protocol added by Joseph Shuttlesworth
  * (Thanks to Ribeiro Santos from the original blog post and http://www.maartendamen.com/2010/05/jeenode-infrared-project-part-1-getting-started/)
  */
-#include <IRremote.h>
+#include <IRremote2.h>
  
 #define Samsung2Address      0x200       // Samsung2 Address (Pre data) 
 #define Samsung2Power        0x7007F000  // Samsung2 Power Button

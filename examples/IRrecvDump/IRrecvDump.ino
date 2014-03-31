@@ -7,7 +7,7 @@
  * JVC and Panasonic protocol added by Kristian Lauszus (Thanks to zenwheel and other people at the original blog post)
  */
 
-#include <IRremote.h>
+#include <IRremote2.h>
 
 int RECV_PIN = 11;
 

@@ -12,8 +12,8 @@
  * JVC and Panasonic protocol added by Kristian Lauszus (Thanks to zenwheel and other people at the original blog post)
  */
 #include <Arduino.h>
-#ifndef IRremote_h
-#define IRremote_h
+#ifndef IRremote2_h
+#define IRremote2_h
 
 // The following are compile-time library options.
 // If you change them, recompile the library.

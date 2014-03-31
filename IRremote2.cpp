@@ -16,8 +16,8 @@
  * JVC and Panasonic protocol added by Kristian Lauszus (Thanks to zenwheel and other people at the original blog post)
  */
 
-#include "IRremote.h"
-#include "IRremoteInt.h"
+#include "IRremote2.h"
+#include "IRremoteInt2.h"
 
 // Provides ISR
 #if defined(IR_USE_SAM)

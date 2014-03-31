@@ -13,8 +13,8 @@
  * JVC and Panasonic protocol added by Kristian Lauszus (Thanks to zenwheel and other people at the original blog post)
  */
 
-#ifndef IRremoteint_h
-#define IRremoteint_h
+#ifndef IRremoteint2_h
+#define IRremoteint2_h
 
 #if defined(ARDUINO) && ARDUINO >= 100
 #include <Arduino.h>

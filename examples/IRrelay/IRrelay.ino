@@ -6,7 +6,7 @@
  * http://arcfn.com
  */
 
-#include <IRremote.h>
+#include <IRremote2.h>
 
 int RECV_PIN = 11;
 int RELAY_PIN = 4;
