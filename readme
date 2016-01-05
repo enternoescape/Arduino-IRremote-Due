@@ -1,3 +1,5 @@
+This library is no longer maintained. I know a lot of people are using it because the latest version of the more mainstream library does not support the Arudino Due, so this repository shall remain, with the condition that it is unsupported. I will accept pull requests if someone wants to fix something.
+
 This is a copy of the excellent IRremote library for the Arduino modified to work on the Arduino Due while retaining backwards compatibility.
 
 I added send and receive support for a SAMSUNG protocol that Ribeiro Santos provided a send function for in the comments on Ken Sherriff’s website since it works for one of my remotes. The receive function is from http://www.maartendamen.com/2010/05/jeenode-infrared-project-part-1-getting-started/
